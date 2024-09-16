@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from scipy.stats import skew, kurtosis
-from preprocessing import preprocess
-
+from preprocessing import preprocess, encode_categorical_columns
 def load_files():
     # Define the path to the directory containing the CSV files
     csv_dir = 'training-data/'
@@ -91,7 +90,7 @@ def analyseFeatureDistributions(data: pd.DataFrame, topFeatures: list) -> pd.Dat
         plt.xlabel(feature)
         plt.ylabel('Frequency')
         plt.grid(True)
-        plt.savefig(f'hist_{feature}.png')
+        plt.savefig(f'images/hist_{feature}.png')
 
         skewness = skew(data[feature].dropna())
         kurt = kurtosis(data[feature].dropna())
@@ -107,12 +106,10 @@ def heatmap(df, n):
     sns.heatmap(corrlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
     plt.title('Correlation Heatmap')
     plt.tight_layout()
-    plt.savefig('heatmap.png')
+    plt.savefig('images/heatmap.png')
 
     # return the top n feature pairs 
     return corrlation_matrix.unstack().sort_values(ascending=False).drop_duplicates().head(n)
-
- 
 
 
 
@@ -133,7 +130,7 @@ def main():
     summary_stats(combined_df)
 
     # Preprocess the data
-    combined_df,_ = preprocess(combined_df, target)
+    combined_df = encode_categorical_columns(combined_df)
 
     # find the top 5 correlations with the target variable
     top_correlations = findTopCorrelations(combined_df, target, 5)
@@ -150,7 +147,7 @@ def main():
 
     # Heatmap
     correlated_features_pairs = heatmap(combined_df, 5)
-    print(f"\nTop {5} correlated features:")
+    print(f"\nTop {5} correlated features pairs:")
     print(correlated_features_pairs)
 
     # plots of the top 5 correlated features pairs
@@ -162,7 +159,7 @@ def main():
         plt.xlabel(feature1)
         plt.ylabel(feature2)
         plt.grid(True)
-        plt.savefig(f'{feature1}_vs_{feature2}.png')
+        plt.savefig(f'images/{feature1}_vs_{feature2}.png')
 
 
     # scatter plot of the top 5 correlated features
@@ -173,7 +170,7 @@ def main():
         plt.xlabel(feature)
         plt.ylabel(target)
         plt.grid(True)
-        plt.savefig(f'{feature}_vs_{target}.png')
+        plt.savefig(f'images/{feature}_vs_{target}.png')
 
 
 if __name__ == '__main__':
