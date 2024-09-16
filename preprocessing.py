@@ -6,9 +6,12 @@ from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.impute import SimpleImputer
 
 
-def encode_categorical_columns(df):
+def encode_categorical_columns(df, columns):
     # Iterate over each column in the DataFrame
     for column in df.select_dtypes(include=['object', 'category']).columns:
+        if column in columns: # skip nominal columns
+            continue
+
         # Encode the column as a categorical type
         df[column] = df[column].astype('category')
 
@@ -101,6 +104,10 @@ def impute_missing_values(df, imputer=None):
         imputer.fit(df)
     return pd.DataFrame(imputer.transform(df), columns=df.columns), imputer
 
+
+def one_hot_encode(df, columns):
+    return pd.get_dummies(df, columns=columns)
+
 def preprocess(X_train, y_train, X_test, y_test):
     # Handle missing data
     X_train = set_missing_data_to_nan(X_train)
@@ -111,8 +118,13 @@ def preprocess(X_train, y_train, X_test, y_test):
     #X_test = engineer_features(X_test)
 
     # Encode the categorical columns
-    X_train = encode_categorical_columns(X_train)
-    X_test = encode_categorical_columns(X_test)
+    nominal_columns = ['key', 'mode']
+
+    X_train = encode_categorical_columns(X_train,nominal_columns)
+    X_test = encode_categorical_columns(X_test,nominal_columns)
+
+    X_train = one_hot_encode(X_train, columns=nominal_columns)
+    X_test = one_hot_encode(X_test, columns=nominal_columns)
 
     # Get column names before converting to numpy arrays
     original_columns = X_train.columns
@@ -145,7 +157,7 @@ def preprocess(X_train, y_train, X_test, y_test):
     X_test = pd.DataFrame(X_test, columns=[col for col in original_columns if col not in ignored_columns])
 
     # Return preprocessed data
-    return X_train, X_test, pd.DataFrame(y_train), pd.DataFrame(y_test), scaler, imputer
+    return X_train, X_test, pd.DataFrame(y_train), pd.DataFrame(y_test), scaler, imputer, nominal_columns
 
 
 
@@ -158,7 +170,7 @@ if __name__ == '__main__':
     X_train, X_val, y_train, y_val = splitData(df, target)
 
     # preprocess
-    X_preprocessed_train, X_preprocessed_val, y_preprocessed_train, y_preprocessed_val,scaler,imputer = preprocess(X_train, y_train, X_val, y_val)
+    X_preprocessed_train, X_preprocessed_val, y_preprocessed_train, y_preprocessed_val,scaler,imputer,nominal_cols = preprocess(X_train, y_train, X_val, y_val)
 
     # save preprocessed data
     X_preprocessed_train.to_csv('data/X_train.csv', index=False)
@@ -170,7 +182,8 @@ if __name__ == '__main__':
     # Process testing-instances.csv
     testing_instances = pd.read_csv('testing-data/testing-instances.csv')
     testing_instances = set_missing_data_to_nan(testing_instances)
-    testing_instances = encode_categorical_columns(testing_instances)
+    testing_instances = encode_categorical_columns(testing_instances, nominal_cols)
+    testing_instances = one_hot_encode(testing_instances, columns=nominal_cols)
     testing_instances, _ = impute_missing_values(testing_instances, imputer)
     testing_instances = drop_columns(testing_instances, ignored_columns)
     testing_instances = pd.DataFrame(scaler.transform(testing_instances), columns=testing_instances.columns)

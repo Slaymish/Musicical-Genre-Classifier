@@ -108,9 +108,14 @@ def heatmap(df, n):
     plt.tight_layout()
     plt.savefig('images/heatmap.png')
 
-    # return the top n feature pairs 
-    return corrlation_matrix.unstack().sort_values(ascending=False).drop_duplicates().head(n)
+    # return the top n feature pairs sorted by squared value
+    return corrlation_matrix.unstack().apply(lambda x: abs(x)).sort_values(ascending=False).drop_duplicates().head(n)
 
+genre_mapping = {0: 'Alternative', 1: 'Blues', 2: 'Classical', 3: 'Comedy', 4: 'Folk', 5: 'Hip-Hop', 6: 'Jazz', 7: 'Opera', 8: 'Pop', 9: 'R&B'}
+
+# Function to update x-axis labels
+def update_x_labels(ax, mapping):
+    ax.set_xticklabels([mapping[int(label.get_text())] for label in ax.get_xticklabels()])
 
 
 
@@ -172,6 +177,38 @@ def main():
         plt.grid(True)
         plt.savefig(f'images/{feature}_vs_{target}.png')
 
+    # Violin plot of the top 5 correlated features
+    for feature in top_features:
+        plt.figure(figsize=(10, 6))
+        ax = sns.violinplot(x=target, y=feature, data=combined_df, hue='genre')
+        plt.title(f'{feature} vs {target}')
+        plt.xlabel('Genre')
+        plt.ylabel(feature)
+        plt.grid(True)
+        update_x_labels(ax, genre_mapping)
+        plt.savefig(f'images/{feature}_vs_{target}_violin.png')
+
+    # Box plot of the top 5 correlated features
+    for feature in top_features:
+        plt.figure(figsize=(10, 6))
+        ax = sns.boxplot(x=target, y=feature, data=combined_df, hue='genre')
+        plt.title(f'{feature} vs {target}')
+        plt.xlabel('Genre')
+        plt.ylabel(feature)
+        plt.grid(True)
+        update_x_labels(ax, genre_mapping)
+        plt.savefig(f'images/{feature}_vs_{target}_box.png')
+
+
+    # duration_ms vs genre
+    plt.figure(figsize=(10, 6))
+    ax = sns.boxplot(x=target, y='duration_ms', data=combined_df, hue='genre')
+    plt.title('duration_ms vs genre')
+    plt.xlabel('Genre')
+    plt.ylabel('duration_ms')
+    plt.grid(True)
+    update_x_labels(ax, genre_mapping)
+    plt.savefig('images/duration_ms_vs_genre_box.png')
 
 if __name__ == '__main__':
     main()

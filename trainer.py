@@ -6,6 +6,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.feature_selection import RFE
 from xgboost import XGBClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 
 
 def feature_selection(X_train, y_train, model, n_features=10):
@@ -36,6 +37,12 @@ def train_and_eval(X_train, y_train, X_test, y_test, model):
     model.fit(X_train, y_train)
     predictions = model.predict(X_test)
     accuracy = accuracy_score(y_test, predictions)
+    return accuracy, model
+
+def neural_network(X_train, y_train, X_test, y_test):
+    """Train a neural network model using scikit-learn."""
+    model = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=0)
+    accuracy, model = train_and_eval(X_train, y_train, X_test, y_test, model)
     return accuracy, model
 
 def main():
@@ -70,6 +77,19 @@ def main():
     accuracy, stack_model = train_and_eval(X_train, y_train, X_val, y_val, stack_model)
     print(f'Stacking Model Accuracy: {accuracy}')
 
+    # Compare to neural network model
+    nn_params = {
+        'hidden_layer_sizes': [(100, 50), (100, 100), (50, 50)],
+        'max_iter': [1000, 2000]
+    }
+
+    """ print('Training Neural Network Model...')
+    nn_model = MLPClassifier(random_state=0)
+    nn_model = hyperparameter_tuning(X_train, y_train, nn_model, nn_params)
+    print('Evaluating Neural Network Model...')
+    print('Best Parameters:', nn_params)
+    accuracy, nn_model = train_and_eval(X_train, y_train, X_val, y_val, nn_model) """
+
     # Predict on testing data
     testing_instances_processed = pd.read_csv('testing-data/testing-instances-processed.csv')
 
@@ -85,6 +105,12 @@ def main():
     zip_data = zip(testing_instances['instance_id'], predictions)
     results = pd.DataFrame(zip_data, columns=['instance_id', 'genre'])
     results.to_csv('results.csv', index=False)
+
+    # Save predictions
+    prediction_output = pd.DataFrame(predictions, columns=['Predicted Genre'])
+    prediction_output.to_csv('testing-data/predictions.csv', index=False)
+    print('Predictions saved to testing-data/predictions.csv')
+
 
 
 if __name__ == '__main__':
