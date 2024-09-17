@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from scipy.stats import skew, kurtosis
-from preprocessing import preprocess, encode_categorical_columns
+from preprocessing import encode_categorical_columns
 def load_files():
     # Define the path to the directory containing the CSV files
     csv_dir = 'training-data/'
@@ -135,7 +135,7 @@ def main():
     summary_stats(combined_df)
 
     # Preprocess the data
-    combined_df = encode_categorical_columns(combined_df)
+    combined_df = encode_categorical_columns(combined_df, combined_df.columns)
 
     # find the top 5 correlations with the target variable
     top_correlations = findTopCorrelations(combined_df, target, 5)
@@ -209,6 +209,16 @@ def main():
     plt.grid(True)
     update_x_labels(ax, genre_mapping)
     plt.savefig('images/duration_ms_vs_genre_box.png')
+
+
+    # graph of artists most common genre
+    plt.figure(figsize=(10, 6))
+    combined_df['artist_genre'].value_counts().plot(kind='bar')
+    plt.title('Artist Most Common Genre')
+    plt.xlabel('Genre')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.savefig('images/artist_most_common_genre.png')
 
 if __name__ == '__main__':
     main()
