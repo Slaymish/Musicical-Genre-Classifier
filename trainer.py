@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, StackingClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
@@ -35,17 +35,34 @@ def create_SVM_model():
 
 def create_stacking_model2():
     base_models = [
-        ('rf', RandomForestClassifier(n_estimators=100, random_state=0)),
-        ('gbt', MLPClassifier(hidden_layer_sizes=(100, 100, 100), max_iter=1000)),
-        ('svm', SVC())
+        ('rf', RandomForestClassifier(n_estimators=400, max_depth=20)),
+        ('gbt', MLPClassifier(hidden_layer_sizes=(50, 50), max_iter=1000)),
+        ('svm', SVC(C=100, kernel='rbf'))
     ]
     meta_model = LogisticRegression()
-    return StackingClassifier(estimators=base_models, final_estimator=meta_model, cv=5, n_jobs=-1)
+    return StackingClassifier(estimators=base_models, final_estimator=meta_model, cv=7, n_jobs=-1)
+
+
+def hyperparam_tune_mlp(X_train, y_train):
+    param_grid = {
+        'hidden_layer_sizes': [(50, 50), (100, 100), (200, 200), (300, 300)],
+        'max_iter': [500, 1000, 2000, 5000]
+    }
+    grid_search = GridSearchCV(MLPClassifier(), param_grid, cv=5, scoring='accuracy', n_jobs=-1)
+    grid_search.fit(X_train, y_train)
+    print(f'Best parameters: {grid_search.best_params_}')
+    print(f'Best cross-validation accuracy: {grid_search.best_score_}')
+    return grid_search.best_estimator_
 
 
 def train_and_evaluate(X_train, y_train, X_val, y_val):
     #model = create_stacking_model()
+
     model = create_stacking_model2() 
+
+    #model = hyperparam_tune_mlp(X_train, y_train)
+
+
     model.fit(X_train, y_train)
     predictions = model.predict(X_val)
     accuracy = accuracy_score(y_val, predictions)
