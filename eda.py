@@ -5,6 +5,8 @@ import seaborn as sns
 import numpy as np
 from scipy.stats import skew, kurtosis
 from preprocessing import encode_categorical_columns
+
+
 def load_files():
     # Define the path to the directory containing the CSV files
     csv_dir = 'training-data/'

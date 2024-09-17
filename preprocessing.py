@@ -7,6 +7,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.decomposition import PCA
 
 class MissingValueHandler(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
@@ -16,6 +17,8 @@ class MissingValueHandler(BaseEstimator, TransformerMixin):
         X = X.copy()
         X['tempo'] = pd.to_numeric(X['tempo'], errors='coerce')
         X['duration_ms'] = X['duration_ms'].replace(-1, np.nan)
+        X['mode'] = X['mode'].replace(-1, np.nan)
+        X['artist_name'] = X['artist_name'].replace('empty_field', 'missing')
         return X
 
 class ArtistGenreEncoder(BaseEstimator, TransformerMixin):
@@ -56,11 +59,15 @@ def create_preprocessing_pipeline():
         ('cat', categorical_transformer, categorical_features)
     ])
 
+    # PCA to reduce dimensionality
+    dimensionality_reduction = PCA(n_components=10)
+
     return Pipeline([
         ('missing_handler', MissingValueHandler()),
         ('artist_genre_encoder', ArtistGenreEncoder()),
         ('preprocessor', preprocessor),
-        ('feature_selection', SelectKBest(score_func=f_classif, k=10))
+        ('feature_selection', SelectKBest(score_func=f_classif, k=15)),
+        ('PCA', dimensionality_reduction)
     ])
 
 def load_and_preprocess_data(train_file, test_file):
@@ -89,8 +96,8 @@ if __name__ == '__main__':
     print(y_train.shape)
 
     # convert from sparse matrix to DataFrame
-    X_train = pd.DataFrame(X_train.toarray())
-    X_test = pd.DataFrame(X_test.toarray())
+    X_train = pd.DataFrame(X_train)
+    X_test = pd.DataFrame(X_test)
 
     # Split training data into train and validation sets
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
